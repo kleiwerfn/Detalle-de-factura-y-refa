@@ -264,7 +264,7 @@ if uploaded_files and modo_operacion == "Débitos":
             
             if facturas_pegadas:
                 import re
-                facturas_pegadas_lista = re.split(r'[,\s]', facturas_pegadas.strip())
+                facturas_pegadas_lista = re.split(r'[,\n]+', facturas_pegadas.strip())
                 facturas_pegadas_lista = [f.strip() for f in facturas_pegadas_lista if f]
 
                 
