@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import re
@@ -6,8 +7,13 @@ from io import BytesIO
 import zipfile
 import traceback
 from openpyxl import load_workbook
+from openpyxl.worksheet.table import Table
+from openpyxl.utils import get_column_letter
+from openpyxl.utils.cell import coordinate_from_string, column_index_from_string
+from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.drawing.image import Image as XLImage
 from PIL import Image
+
 
 # Columnas a eliminar completamente
 columns_to_drop = [
@@ -70,56 +76,104 @@ def clean_and_format_dataframe(df):
             df[col] = pd.to_numeric(df[col], errors='coerce')
     return df
 
+
 def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
     zip_buffer = BytesIO()
     safe_base = re.sub(r'\W+', '_', folder_base.strip()) or "Facturas"
+
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
         grouped = df.groupby(['COBERTURA', 'NRO.FACTURA'])
+
         for (cobertura, factura), group in grouped:
             safe_cobertura = re.sub(r'\W+', '', str(cobertura))[:20]
             safe_factura = re.sub(r'\W+', '', str(factura))[:20]
             filename = f"{safe_base}/{safe_cobertura}/Factura_{safe_factura}_{safe_cobertura}.xlsx"
+
             if modo_operacion == "Débitos":
                 columnas_deseadas = [
-                    "APELLIDO Y NOMBRE", "COD.NOM", "PRESTACION",
+                    "APELLIDO Y NOMBRE", "COD.NOM", "PRESTACION", "FECHA PRES",
                     "CANTID.", "IMPORTE UNIT.", "IMPORTE PREST."
                 ]
+                
+                group = clean_and_format_dataframe(group)  # ← Esta línea es nueva
                 group = group[[col for col in columnas_deseadas if col in group.columns]]
-                group["A REFACTURAR"] = ""
-                group["MOTIVO"] = ""
-                orden_final = columnas_deseadas + ["A REFACTURAR", "MOTIVO"]
-                group = group[orden_final]
-                excel_buffer = BytesIO()
-                group.to_excel(excel_buffer, index=False, engine='openpyxl', startrow=1)
-                excel_buffer.seek(0)
-                wb = load_workbook(excel_buffer)
-                ws = wb.active
+
+                wb = load_workbook("Plantilla_Débitos_1.xlsx")
+                ws = wb["Debitos"]
+     
+               
+                # Buscar la tabla que contenga 'debitos' en su nombre
+                tabla = None
+                for t_name in ws.tables:
+                    if "debitos" in t_name.lower():
+                        tabla = ws.tables[t_name]
+                        break
+
+                # Validar que se encontró la tabla
+                if not tabla:
+                    st.warning(f"No se encontró una tabla que contenga 'debitos' en su nombre. Tablas disponibles: {list(ws.tables.keys())}")
+                   
+
+                # Insertar logo en A1 si se proporcionó 
+                if logo_bytes:
+                    try:
+                        logo_img = Image.open(BytesIO(logo_bytes))
+                        logo_img.save("temp_logo.png")  # Guardar temporalmente
+                        xl_logo = XLImage("temp_logo.png")
+                        xl_logo.anchor = 'A1'
+                        ws.add_image(xl_logo)
+                    except Exception as e:
+                        st.warning(f"No se pudo insertar el logo: {e}")
+    
+                # Insertar encabezado
                 encabezado = f"REFACTURACIÓN Fc {factura} - {cobertura}"
                 ws["B1"] = encabezado
-                ws.row_dimensions[1].height = 60
-                ws.column_dimensions['A'].width = 12
-                if logo_bytes:
-                    logo_image = Image.open(logo_bytes)
-                    dpi = 96
-                    width_px = int((2.13 / 2.54) * dpi)
-                    height_px = int((2 / 2.54) * dpi)
-                    logo_image = logo_image.resize((width_px, height_px))
-                    logo_stream = BytesIO()
-                    logo_image.save(logo_stream, format='PNG')
-                    logo_stream.seek(0)
-                    logo = XLImage(logo_stream)
-                    logo.anchor = 'A1'
-                    ws.add_image(logo)
+
+
+                # Insertar datos desde la fila 3, solo columnas A-G
+                start_row = 3
+                for i, row in group.iterrows():
+                    for j, col in enumerate(columnas_deseadas[:7], start=1):  # A-G
+                        if col in row:
+                            ws.cell(row=start_row, column=j, value=row[col])
+                    start_row += 1
+                    
+          
+                # Crear validación de datos para SECTOR (columna K) con lista fija
+                dv_sector = DataValidation(type="list", formula1='"ADMIN,MEDICO,COMERCIAL"', allow_blank=True)
+
+                # Agregar la validación a la hoja
+                ws.add_data_validation(dv_sector)
+
+                # Aplicar la validación a un rango amplio en la columna K (por ejemplo, de la fila 3 a la 200)
+                dv_sector.add("K3:K200")
+
+                
+                # Actualizar rango de la tabla (recrear tabla con nuevo rango)
+                if tabla:
+                    try:
+                        new_ref = f"{ws.cell(row=2, column=1).coordinate}:{ws.cell(row=start_row - 1, column=20).coordinate}"
+                        new_table = Table(displayName=tabla.displayName, ref=new_ref)
+                        new_table.tableStyleInfo = tabla.tableStyleInfo
+                        del ws.tables[tabla.displayName]
+                        ws.add_table(new_table)
+                    except Exception as e:
+                        st.warning(f"No se pudo actualizar el rango de la tabla: {e}")
+
+               
                 final_buffer = BytesIO()
                 wb.save(final_buffer)
                 final_buffer.seek(0)
                 zipf.writestr(filename, final_buffer.read())
+                
             else:
                 group = clean_and_format_dataframe(group)
                 excel_buffer = BytesIO()
                 group.to_excel(excel_buffer, index=False, engine='openpyxl')
                 excel_buffer.seek(0)
                 zipf.writestr(filename, excel_buffer.read())
+
+        # Crear resumen
         df['IMPORTE PREST.'] = pd.to_numeric(df['IMPORTE PREST.'], errors='coerce').fillna(0)
         summary_df = (
             df.groupby(['COBERTURA', 'NRO.FACTURA', 'APELLIDO Y NOMBRE'], as_index=False)['IMPORTE PREST.']
@@ -129,9 +183,11 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
         summary_df.to_excel(summary_buffer, index=False, engine='openpyxl')
         summary_buffer.seek(0)
         zipf.writestr(f"{safe_base}/resumen_facturas.xlsx", summary_buffer.read())
+
     zip_buffer.seek(0)
     return zip_buffer
 
+ 
 def process_file(file, folder_base, modo_operacion, logo_bytes, selected_facturas=None):
     try:
         try:
@@ -147,19 +203,17 @@ def process_file(file, folder_base, modo_operacion, logo_bytes, selected_factura
             st.error(f"Faltan las siguientes columnas requeridas: {', '.join(missing)}")
             return
 
-        # Limpieza de espacios en blanco (versión actualizada sin applymap)
+        # Limpieza de espacios en blanco
         for col in df.select_dtypes(include='object'):
             df[col] = df[col].map(lambda x: x.strip() if isinstance(x, str) else x)
 
         df.dropna(how='all', inplace=True)
         df.sort_values(by='NRO.FACTURA', inplace=True)
-        
-        
-        # Filtrado seguro por facturas seleccionadas
+
+        # Filtrado por facturas seleccionadas
         if modo_operacion == "Débitos" and selected_facturas:
             selected_facturas = [str(f).strip() for f in selected_facturas]
             df = df[df['NRO.FACTURA'].astype(str).str.strip().isin(selected_facturas)]
-
 
         df_clean = clean_and_format_dataframe(df)
         output = BytesIO()
@@ -180,34 +234,57 @@ def process_file(file, folder_base, modo_operacion, logo_bytes, selected_factura
 
 # Interfaz de usuario
 st.title("📄 Convertidor TXT a Excel con separación por COBERTURA y resumen")
+
 uploaded_files = st.file_uploader("Selecciona uno o más archivos .txt para convertir a Excel", type="txt", accept_multiple_files=True)
 folder_base = st.text_input("📁 Nombre de la carpeta raíz para los archivos generados", value="Facturas")
 modo_operacion = st.selectbox("Selecciona el tipo de operación", ["Facturación", "Débitos"])
-logo_file = st.file_uploader("🖼️ Logo para encabezado (solo para Débitos)", type=["png", "jpg", "jpeg"])
 
 # Multiselección de facturas si es Débitos
 selected_facturas = []
+
 if uploaded_files and modo_operacion == "Débitos":
     try:
-        # Crear una copia del archivo para evitar conflictos de lectura
         file_bytes = uploaded_files[0].getvalue()
         file_copy = BytesIO(file_bytes)
-
         df_preview = leer_txt_a_dataframe(file_copy)
         df_preview.columns = df_preview.columns.str.strip()
 
         if 'NRO.FACTURA' in df_preview.columns:
-            facturas_unicas = sorted(df_preview['NRO.FACTURA'].dropna().unique())
+            facturas_unicas = sorted(df_preview['NRO.FACTURA'].dropna().astype(str).unique())
+
+            # Campo para pegar números de factura manualmente
+            facturas_pegadas = st.text_area(
+                "📋 O pega aquí los números de factura separados por coma, espacio o salto de línea",
+                placeholder="Ej: 12345, 67890\n11223"
+            )
+
+            facturas_pegadas_lista = []
+            facturas_no_encontradas = []
+
+            if facturas_pegadas:
+                import re
+                facturas_pegadas_lista = re.split(r'[,\s]', facturas_pegadas.strip())
+                facturas_pegadas_lista = [f for f in facturas_pegadas_lista if f]
+
+                # Verificar cuáles no están en el archivo
+                facturas_no_encontradas = [f for f in facturas_pegadas_lista if f not in facturas_unicas]
+                if facturas_no_encontradas:
+                    st.warning(f"⚠️ Las siguientes facturas no se encontraron en el archivo: {', '.join(facturas_no_encontradas)}")
+
+            # Multiselección con valores válidos
             selected_facturas = st.multiselect(
                 "🧾 Selecciona los números de factura que deseas generar",
                 options=facturas_unicas,
-                default=facturas_unicas
+                default=[f for f in facturas_pegadas_lista if f in facturas_unicas]
             )
+
             st.caption(f"Se seleccionaron {len(selected_facturas)} factura(s).")
+
         else:
             st.warning("El archivo no contiene la columna 'NRO.FACTURA'.")
     except Exception as e:
         st.warning(f"No se pudo cargar la lista de facturas para seleccionar: {e}")
+
 
 # Botón para procesar
 if st.button("🚀 Convertir"):
@@ -215,5 +292,4 @@ if st.button("🚀 Convertir"):
         with st.spinner("Procesando archivos..."):
             for file in uploaded_files:
                 st.subheader(f"Procesando: {file.name}")
-                logo_bytes = logo_file if logo_file else None
-                process_file(file, folder_base, modo_operacion, logo_bytes, selected_facturas)
+                process_file(file, folder_base, modo_operacion, None, selected_facturas)
