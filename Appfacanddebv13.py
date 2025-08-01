@@ -269,12 +269,20 @@ if uploaded_files and modo_operacion == "Débitos":
 
                 
             # Buscar coincidencias exactas o por últimos dígitos
+            import re
+
             for f in facturas_pegadas_lista:
-                coincidencias = [fact for fact in facturas_unicas if fact.endswith(f)]
+                coincidencias = []
+                for fact in facturas_unicas:
+                    # Extraer los últimos 4 a 6 dígitos numéricos del número de factura
+                    match = re.search(r'(\d{4,6})$', fact)
+                    if match and match.group(1).endswith(f):
+                        coincidencias.append(fact)
                 if coincidencias:
                     facturas_encontradas.extend(coincidencias)
                 else:
                     facturas_no_encontradas.append(f)
+
 
             if facturas_no_encontradas:
                 st.warning(f"⚠️ Las siguientes entradas no se encontraron como coincidencia en los números de factura: {', '.join(facturas_no_encontradas)}")
