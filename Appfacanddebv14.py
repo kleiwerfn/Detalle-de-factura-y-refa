@@ -260,22 +260,33 @@ if uploaded_files and modo_operacion == "Débitos":
 
             facturas_pegadas_lista = []
             facturas_no_encontradas = []
-
+            facturas_encontradas = [] 
+            
             if facturas_pegadas:
                 import re
                 facturas_pegadas_lista = re.split(r'[,\s]', facturas_pegadas.strip())
-                facturas_pegadas_lista = [f for f in facturas_pegadas_lista if f]
+                facturas_pegadas_lista = [f.strip() for f in facturas_pegadas_lista if f]
 
-                # Verificar cuáles no están en el archivo
-                facturas_no_encontradas = [f for f in facturas_pegadas_lista if f not in facturas_unicas]
-                if facturas_no_encontradas:
-                    st.warning(f"⚠️ Las siguientes facturas no se encontraron en el archivo: {', '.join(facturas_no_encontradas)}")
+                
+            # Buscar coincidencias exactas o por últimos dígitos
+            for f in facturas_pegadas_lista:
+                coincidencias = [fact for fact in facturas_unicas if fact.endswith(f)]
+                if coincidencias:
+                    facturas_encontradas.extend(coincidencias)
+                else:
+                    facturas_no_encontradas.append(f)
+
+            if facturas_no_encontradas:
+                st.warning(f"⚠️ Las siguientes entradas no se encontraron como coincidencia en los números de factura: {', '.join(facturas_no_encontradas)}")
+
+            # Eliminar duplicados
+            facturas_encontradas = sorted(set(facturas_encontradas))
 
             # Multiselección con valores válidos
             selected_facturas = st.multiselect(
                 "🧾 Selecciona los números de factura que deseas generar",
                 options=facturas_unicas,
-                default=[f for f in facturas_pegadas_lista if f in facturas_unicas]
+                default=facturas_encontradas
             )
 
             st.caption(f"Se seleccionaron {len(selected_facturas)} factura(s).")
