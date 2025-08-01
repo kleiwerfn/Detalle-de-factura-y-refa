@@ -216,16 +216,12 @@ def process_file(file, folder_base, modo_operacion, logo_bytes, selected_factura
             df = df[df['NRO.FACTURA'].astype(str).str.strip().isin(selected_facturas)]
 
         df_clean = clean_and_format_dataframe(df)
-        output = BytesIO()
-        df_clean.to_excel(output, index=False, engine='openpyxl')
-        output.seek(0)
-
+        
         unique_invoices = df_clean['NRO.FACTURA'].nunique()
         st.info(f"Se generarán {unique_invoices} archivos únicos por número de factura.")
 
         zip_output = generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes)
         st.success("Archivo convertido y listo para descargar.")
-        st.download_button("📥 Descargar archivo Excel completo", data=output, file_name="archivo_completo.xlsx")
         st.download_button("📦 Descargar ZIP con facturas y resumen", data=zip_output, file_name="facturas_por_cobertura.zip", mime="application/zip")
 
     except Exception as e:
