@@ -287,15 +287,14 @@ if uploaded_files and modo_operacion == "Débitos":
             # Eliminar duplicados
             facturas_encontradas = sorted(set(facturas_encontradas))
 
-        # Multiselección con valores válidos
-        selected_facturas = st.multiselect(
-            "🧾 Selecciona los números de factura que deseas generar",
-            options=facturas_unicas,
+            # Multiselección con valores válidos
+            selected_facturas = st.multiselect(
+                "🧾 Selecciona los números de factura que deseas generar",
+                options=facturas_unicas,
             default=facturas_encontradas
-        )
+            )
 
-        st.caption(f"Se seleccionaron {len(selected_facturas)} factura(s).")
-
+            st.caption(f"Se seleccionaron {len(selected_facturas)} factura(s).")
         else:
             st.warning("El archivo no contiene la columna 'NRO.FACTURA'.")
     except Exception as e:
