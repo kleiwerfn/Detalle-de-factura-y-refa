@@ -275,7 +275,7 @@ if uploaded_files and modo_operacion == "Facturación":
             coberturas_unicas = sorted(df_preview['COBERTURA'].dropna().astype(str).unique())
             selected_coberturas = st.multiselect(
                 "🧾 Selecciona las COBERTURAS que deseas incluir",
-                options=coberturas_unicas
+                options=coberturas_unicas, placeholder="Selecciona una cobertura"
             )
     except Exception as e:
         st.warning(f"No se pudo cargar la lista de COBERTURAS: {e}")
