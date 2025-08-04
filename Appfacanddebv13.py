@@ -6,6 +6,7 @@ import csv
 from io import BytesIO
 import zipfile
 import traceback
+from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.worksheet.table import Table
 from openpyxl.utils import get_column_letter
@@ -173,22 +174,45 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                 excel_buffer.seek(0)
                 zipf.writestr(filename, excel_buffer.read())
 
-        # Crear resumen
+        # Crear resumen modificado
         df['IMPORTE PREST.'] = pd.to_numeric(df['IMPORTE PREST.'], errors='coerce').fillna(0)
-        summary_df = (
-            df.groupby(['COBERTURA', 'NRO.FACTURA', 'APELLIDO Y NOMBRE'], as_index=False)['IMPORTE PREST.']
-            .sum()
+        resumen_df = (
+            df.groupby(['COBERTURA', 'NRO.FACTURA', 'ADMIS'])
+            .agg(CANTIDAD_PACIENTES=('APELLIDO Y NOMBRE', 'count'),
+                 TOTAL_FACTURA=('IMPORTE PREST.', 'sum'))
+            .reset_index()
         )
-        summary_buffer = BytesIO()
-        summary_df.to_excel(summary_buffer, index=False, engine='openpyxl')
-        summary_buffer.seek(0)
-        zipf.writestr(f"{safe_base}/resumen_facturas.xlsx", summary_buffer.read())
+        resumen_buffer = BytesIO()
+        resumen_df.to_excel(resumen_buffer, index=False, engine='openpyxl')
+        resumen_buffer.seek(0)
+
+        # Autoajuste de columnas
+        wb = load_workbook(resumen_buffer)
+        ws = wb.active
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            ws.column_dimensions[column].width = max_length + 2
+        final_buffer = BytesIO()
+        wb.save(final_buffer)
+        final_buffer.seek(0)
+        
+
+        # Nombre del archivo con fecha actual
+        fecha_actual = datetime.today().strftime('%Y-%m-%d')
+        zipf.writestr(f"{safe_base}/{fecha_actual}_resumen_facturas.xlsx", final_buffer.read())
 
     zip_buffer.seek(0)
     return zip_buffer
 
  
-def process_file(file, folder_base, modo_operacion, logo_bytes, selected_facturas=None):
+def process_file(file, folder_base, modo_operacion, logo_bytes, selected_facturas=None, selected_coberturas=None):
     try:
         try:
             df = leer_txt_a_dataframe(file)
@@ -215,6 +239,11 @@ def process_file(file, folder_base, modo_operacion, logo_bytes, selected_factura
             selected_facturas = [str(f).strip() for f in selected_facturas]
             df = df[df['NRO.FACTURA'].astype(str).str.strip().isin(selected_facturas)]
 
+        # Filtrado por coberturas seleccionadas (modo Facturación)
+        if modo_operacion == "Facturación" and selected_coberturas:
+            selected_coberturas = [str(c).strip() for c in selected_coberturas]
+            df = df[df['COBERTURA'].astype(str).str.strip().isin(selected_coberturas)]
+
         df_clean = clean_and_format_dataframe(df)
         
         unique_invoices = df_clean['NRO.FACTURA'].nunique()
@@ -234,6 +263,22 @@ st.title("📄 Convertidor TXT a Excel con separación por COBERTURA y resumen")
 uploaded_files = st.file_uploader("Selecciona uno o más archivos .txt para convertir a Excel", type="txt", accept_multiple_files=True)
 folder_base = st.text_input("📁 Nombre de la carpeta raíz para los archivos generados", value="Facturas")
 modo_operacion = st.selectbox("Selecciona el tipo de operación", ["Facturación", "Débitos"])
+# Multiselección de facturas si es Facturacion
+selected_coberturas = []
+if uploaded_files and modo_operacion == "Facturación":
+    try:
+        file_bytes = uploaded_files[0].getvalue()
+        file_copy = BytesIO(file_bytes)
+        df_preview = leer_txt_a_dataframe(file_copy)
+        df_preview.columns = df_preview.columns.str.strip()
+        if 'COBERTURA' in df_preview.columns:
+            coberturas_unicas = sorted(df_preview['COBERTURA'].dropna().astype(str).unique())
+            selected_coberturas = st.multiselect(
+                "🧾 Selecciona las COBERTURAS que deseas incluir",
+                options=coberturas_unicas
+            )
+    except Exception as e:
+        st.warning(f"No se pudo cargar la lista de COBERTURAS: {e}")
 
 # Multiselección de facturas si es Débitos
 selected_facturas = []
@@ -303,4 +348,4 @@ if st.button("🚀 Convertir"):
         with st.spinner("Procesando archivos..."):
             for file in uploaded_files:
                 st.subheader(f"Procesando: {file.name}")
-                process_file(file, folder_base, modo_operacion, None, selected_facturas)
+                process_file(file, folder_base, modo_operacion, None, selected_facturas, selected_coberturas)
