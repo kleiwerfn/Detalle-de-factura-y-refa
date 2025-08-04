@@ -222,7 +222,7 @@ def process_file(file, folder_base, modo_operacion, logo_bytes, selected_factura
 
         zip_output = generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes)
         st.success("Archivo convertido y listo para descargar.")
-        st.download_button("📦 Descargar ZIP con facturas y resumen", data=zip_output, file_name="facturas_por_cobertura.zip", mime="application/zip")
+        st.download_button(label="📦 Descargar ZIP con facturas y resumen", data=zip_output, file_name="facturas_por_cobertura.zip", mime="application/zip", key=f"descarga_zip_{file.name}")
 
     except Exception as e:
         st.error(f"Ocurrió un error: {e}")
