@@ -218,7 +218,7 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
         df['IMPORTE PREST.'] = pd.to_numeric(df['IMPORTE PREST.'], errors='coerce').fillna(0)
         resumen_df = (
             df.groupby(['COBERTURA', 'NRO.FACTURA', 'ADMIS'])
-            .agg(CANTIDAD_PACIENTES=('APELLIDO Y NOMBRE', 'count'),
+            .agg(CANTIDAD_PACIENTES=('APELLIDO Y NOMBRE', 'nunique'),
                  TOTAL_FACTURA=('IMPORTE PREST.', 'sum'))
             .reset_index()
         )
