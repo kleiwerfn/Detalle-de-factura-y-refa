@@ -167,7 +167,7 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                         st.warning(f"No se pudo insertar el logo: {e}")
     
                 # Insertar encabezado
-                encabezado = f"REFACTURACIÓN Fc {factura} - {cobertura}"
+                encabezado = f"ANALISIS DE DEBITO Fc {factura} - {cobertura}"
                 ws["B1"] = encabezado
 
 
