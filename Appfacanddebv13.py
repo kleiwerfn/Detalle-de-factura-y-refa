@@ -6,6 +6,7 @@ import csv
 from io import BytesIO
 import zipfile
 import traceback
+import logging
 from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.worksheet.table import Table
@@ -16,6 +17,14 @@ from openpyxl.drawing.image import Image as XLImage
 from PIL import Image
 
 
+
+# Configuración del logger
+logging.basicConfig(
+    level=logging.DEBUG,  # Usá INFO si querés menos detalle
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='app_debug.log',
+    filemode='w'
+)
 # Columnas a eliminar completamente
 columns_to_drop = [
     'FECHA REND', 'IMPORTE REND.HC', 'ALIC.IVA', 'QUIEN FAC.', 'HORA',
@@ -46,24 +55,26 @@ def ensure_pipe_at_end(file):
     corrected_content = '\n'.join(lines)
     return BytesIO(corrected_content.encode('utf-8'))
 
+
 def detectar_delimitador(file_like, default='|'):
     file_like.seek(0)
-    sample = file_like.read(2048).decode('utf-8', errors='ignore')
-    try:
-        dialect = csv.Sniffer().sniff(sample)
-        delimiter = dialect.delimiter
-    except csv.Error:
-        delimiter = default
-    file_like.seek(0)
-    return delimiter
+    return '|'
+
 
 def leer_txt_a_dataframe(file):
+    logging.info(f"Intentando leer archivo: {file.name}")
     corrected_file = ensure_pipe_at_end(file)
     delimiter = detectar_delimitador(corrected_file)
+    logging.info(f"Delimitador detectado: {delimiter}")
     corrected_file.seek(0)
 
+    try:
     # Leer el archivo como DataFrame
-    df = pd.read_csv(corrected_file, delimiter=delimiter, dtype=str)
+        df = pd.read_csv(corrected_file, delimiter=delimiter, dtype=str)
+        logging.info(f"Archivo leído con {df.shape[0]} filas y {df.shape[1]} columnas")
+    except Exception as e:
+        logging.error(f"Error al leer el archivo: {e}")
+        raise
 
     # Validación: recortar columnas si hay más de las esperadas
     expected_columns = [
@@ -74,16 +85,17 @@ def leer_txt_a_dataframe(file):
         "PROTOCOLO 4", "PROTOCOLO 5", "COD.MA"
     ]
 
-    if df.shape[1] > len(expected_columns):
-        df = df.iloc[:, :len(expected_columns)]
-        df.columns = expected_columns
-    elif df.shape[1] == len(expected_columns):
-        df.columns = expected_columns
-    else:
-        raise ValueError(f"El archivo tiene menos columnas de las esperadas ({df.shape[1]} en lugar de {len(expected_columns)}).")
+        if df.shape[1] > len(expected_columns):
+            df = df.iloc[:, :len(expected_columns)]
+            df.columns = expected_columns
+        elif df.shape[1] == len(expected_columns):
+            df.columns = expected_columns
+        else:
+            raise ValueError(f"El archivo tiene menos columnas de las esperadas ({df.shape[1]} en lugar de {len(expected_columns)}).")
 
-    if df.empty:
-        raise ValueError("El archivo fue leído pero no contiene datos.")
+        if df.empty:
+            logging.warning("El archivo fue leído pero no contiene datos.")
+            raise ValueError("El archivo fue leído pero no contiene datos.")
 
     return df
 
