@@ -62,8 +62,13 @@ def detectar_delimitador(file_like, default='|'):
 
 
 def leer_txt_a_dataframe(file):
-    nombre_archivo = getattr(file, "name", "archivo_sin_nombre.txt")
-    logging.info(f"Intentando leer archivo: {file.name}")
+    
+    try:
+        nombre_archivo = file.name
+    except AttributeError:
+        nombre_archivo = "archivo_sin_nombre.txt"
+
+    logging.info(f"Intentando leer archivo: {nombre_archivo}")
     
     corrected_file = ensure_pipe_at_end(file)
     delimiter = detectar_delimitador(corrected_file)
