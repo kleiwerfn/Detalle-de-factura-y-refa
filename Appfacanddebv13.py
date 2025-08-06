@@ -389,3 +389,8 @@ if st.button("🚀 Convertir"):
             for file in uploaded_files:
                 st.subheader(f"Procesando: {file.name}")
                 process_file(file, folder_base, modo_operacion, None, selected_facturas, selected_coberturas)
+
+st.markdown("---")
+st.markdown(
+    "<div style='text-align: center; color: gray; font-size: 0.9em;'>🧠 Desarrollado por Kleiwerf Nunez 🤖</div>",
+    unsafe_allow_html=True
