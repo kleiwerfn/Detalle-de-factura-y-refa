@@ -394,3 +394,4 @@ st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: gray; font-size: 0.9em;'>🧠 Desarrollado por Kleiwerf Nunez 🤖</div>",
     unsafe_allow_html=True
+)
