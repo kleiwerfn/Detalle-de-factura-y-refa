@@ -85,17 +85,17 @@ def leer_txt_a_dataframe(file):
         "PROTOCOLO 4", "PROTOCOLO 5", "COD.MA"
     ]
 
-        if df.shape[1] > len(expected_columns):
-            df = df.iloc[:, :len(expected_columns)]
-            df.columns = expected_columns
-        elif df.shape[1] == len(expected_columns):
-            df.columns = expected_columns
-        else:
-            raise ValueError(f"El archivo tiene menos columnas de las esperadas ({df.shape[1]} en lugar de {len(expected_columns)}).")
+    if df.shape[1] > len(expected_columns):
+        df = df.iloc[:, :len(expected_columns)]
+        df.columns = expected_columns
+    elif df.shape[1] == len(expected_columns):
+        df.columns = expected_columns
+    else:
+        raise ValueError(f"El archivo tiene menos columnas de las esperadas ({df.shape[1]} en lugar de {len(expected_columns)}).")
 
-        if df.empty:
-            logging.warning("El archivo fue leído pero no contiene datos.")
-            raise ValueError("El archivo fue leído pero no contiene datos.")
+    if df.empty:
+        logging.warning("El archivo fue leído pero no contiene datos.")
+        raise ValueError("El archivo fue leído pero no contiene datos.")
 
     return df
 
