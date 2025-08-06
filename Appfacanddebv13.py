@@ -69,34 +69,34 @@ def leer_txt_a_dataframe(file):
     corrected_file.seek(0)
 
     try:
-    # Leer el archivo como DataFrame
+        # Leer el archivo como DataFrame
         df = pd.read_csv(corrected_file, delimiter=delimiter, dtype=str)
         logging.info(f"Archivo leído con {df.shape[0]} filas y {df.shape[1]} columnas")
+        
+        # Validación: recortar columnas si hay más de las esperadas
+        expected_columns = [
+            "H.CLINICA", "APELLIDO Y NOMBRE", "PERIODO", "COD.OBRA", "COBERTURA", "PLAN", "NRO.FACTURA",
+            "FECHA REND", "IMPORTE REND.HC", "ALIC.IVA", "QUIEN FAC.", "TIP.NOM", "COD.NOM", "PRESTACION",
+            "CANTID.", "FECHA PRES", "HORA", "PANTALLA", "IMPORTE UNIT.", "IMPORTE PREST.", "ORIGEN",
+            "AFILIADO", "ADMIS", "HC UNICA", "TIPO DE MARCA", "PROTOCOLO 1", "PROTOCOLO 2", "PROTOCOLO 3",
+            "PROTOCOLO 4", "PROTOCOLO 5", "COD.MA"
+        ]
+
+        if df.shape[1] > len(expected_columns):
+            df = df.iloc[:, :len(expected_columns)]
+            df.columns = expected_columns
+        elif df.shape[1] == len(expected_columns):
+            df.columns = expected_columns
+        else:
+            raise ValueError(f"El archivo tiene menos columnas de las esperadas ({df.shape[1]} en lugar de {len(expected_columns)}).")
+
+        if df.empty:
+            logging.warning("El archivo fue leído pero no contiene datos.")
+            raise ValueError("El archivo fue leído pero no contiene datos.")
     except Exception as e:
         logging.error(f"Error al leer el archivo: {e}")
         raise
-
-    # Validación: recortar columnas si hay más de las esperadas
-    expected_columns = [
-        "H.CLINICA", "APELLIDO Y NOMBRE", "PERIODO", "COD.OBRA", "COBERTURA", "PLAN", "NRO.FACTURA",
-        "FECHA REND", "IMPORTE REND.HC", "ALIC.IVA", "QUIEN FAC.", "TIP.NOM", "COD.NOM", "PRESTACION",
-        "CANTID.", "FECHA PRES", "HORA", "PANTALLA", "IMPORTE UNIT.", "IMPORTE PREST.", "ORIGEN",
-        "AFILIADO", "ADMIS", "HC UNICA", "TIPO DE MARCA", "PROTOCOLO 1", "PROTOCOLO 2", "PROTOCOLO 3",
-        "PROTOCOLO 4", "PROTOCOLO 5", "COD.MA"
-    ]
-
-    if df.shape[1] > len(expected_columns):
-        df = df.iloc[:, :len(expected_columns)]
-        df.columns = expected_columns
-    elif df.shape[1] == len(expected_columns):
-        df.columns = expected_columns
-    else:
-        raise ValueError(f"El archivo tiene menos columnas de las esperadas ({df.shape[1]} en lugar de {len(expected_columns)}).")
-
-    if df.empty:
-        logging.warning("El archivo fue leído pero no contiene datos.")
-        raise ValueError("El archivo fue leído pero no contiene datos.")
-
+        
     return df
 
 def clean_and_format_dataframe(df):
