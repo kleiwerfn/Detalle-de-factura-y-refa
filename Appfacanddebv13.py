@@ -128,7 +128,11 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
         for (cobertura, factura), group in grouped:
             safe_cobertura = re.sub(r'\W+', '', str(cobertura))[:20]
             safe_factura = re.sub(r'\W+', '', str(factura))[:20]
-            filename = f"{safe_base}/{safe_cobertura}/Factura_{safe_factura}_{safe_cobertura}.xlsx"
+            filename = (
+                f"{safe_base}/{safe_cobertura}/ANAREFA_Analisis_{safe_factura}_{safe_cobertura}.xlsm"
+                if modo_operacion == "Débitos"
+                else f"{safe_base}/{safe_cobertura}/Factura_{safe_factura}_{safe_cobertura}.xlsx"
+            )
 
             if modo_operacion == "Débitos":
                 columnas_deseadas = [
