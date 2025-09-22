@@ -139,7 +139,7 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                 group = clean_and_format_dataframe(group)  # ← Esta línea es nueva
                 group = group[[col for col in columnas_deseadas if col in group.columns]]
 
-                wb = load_workbook("Plantilla_Débitos_1.xlsx")
+                wb = load_workbook("Plantilla_Débitos_1.xlsm")
                 ws = wb["Debitos"]
      
                
