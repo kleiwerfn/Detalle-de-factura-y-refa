@@ -395,7 +395,28 @@ if st.button("🚀 Convertir"):
                 process_file(file, folder_base, modo_operacion, None, selected_facturas, selected_coberturas)
 
 st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; color: gray; font-size: 0.9em;'>🧠 Desarrollado por Kleiwerf Nunez 🤖</div>",
-    unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+@keyframes spinZoom {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.3); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+.robot-icon {
+    display: inline-block;
+    animation: spinZoom 3s ease-in-out 4 forwards;
+}
+.footer-text {
+    text-align: center;
+    color: #555;
+    font-size: 0.95em;
+    font-family: 'Segoe UI', sans-serif;
+    margin-top: 20px;
+}
+</style>
+
+<div class="footer-text">
+    🧠 <strong>Desarrollado por Kleiwerf Núñez</strong> 
+    <span class="robot-icon">🤖</span>
+</div>
+""", unsafe_allow_html=True)
