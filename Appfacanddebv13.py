@@ -2,7 +2,7 @@
 import streamlit as st
 
 # Desactiva el watcher de archivos para evitar el error en la nube
-st.set_option('server.fileWatcherType', 'none'
+st.set_option('server.fileWatcherType', 'none')
 
 import pandas as pd
 import re
