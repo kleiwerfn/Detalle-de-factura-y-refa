@@ -398,30 +398,29 @@ if st.button("🚀 Convertir"):
                 st.subheader(f"Procesando: {file.name}")
                 process_file(file, folder_base, modo_operacion, None, selected_facturas, selected_coberturas)
 
+
+# Footer animado
 st.markdown("---")
 st.markdown("""
 <style>
 @keyframes spinZoom {
-    0% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(180deg) scale(1.3); }
-    100% { transform: rotate(360deg) scale(1); }
+0% { transform: rotate(0deg) scale(1); }
+50% { transform: rotate(180deg) scale(1.3); }
+100% { transform: rotate(360deg) scale(1); }
 }
 .robot-icon {
-    display: inline-block;
-    animation: spinZoom 3s ease-in-out 4 forwards;
+display: inline-block;
+animation: spinZoom 3s ease-in-out 4 forwards;
 }
 .footer-text {
-    text-align: center;
-    color: #555;
-    font-size: 0.95em;
-    font-family: 'Segoe UI', sans-serif;
-    margin-top: 20px;
+text-align: center;
+color: #555;
+font-size: 0.95em;
+font-family: 'Segoe UI', sans-serif;
+margin-top: 20px;
 }
 </style>
-
 <div class="footer-text">
-    🧠 <strong>Desarrollado por Kleiwerf Núñez</strong> 
-    <span class="robot-icon">🤖</span>
+<span class="robot-icon">🧠</span> <strong>Desarrollado por Kleiwerf Núñez</strong> <span class="robot-icon">🤖</span>
 </div>
 """, unsafe_allow_html=True)
-
