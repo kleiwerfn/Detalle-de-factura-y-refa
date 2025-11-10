@@ -48,13 +48,17 @@ numeric_columns = [
 ]
 
 def ensure_pipe_at_end(file):
-    content = file.read().decode('utf-8')
+    try:
+        content = file.read().decode('utf-8')
+    except UnicodeDecodeError:
+        file.seek(0)
+        content = file.read().decode('latin-1')  # ← cambio aquí
+
     lines = content.splitlines()
-    if lines and not lines[0].endswith('|'):
-        lines[0] += '|'
+    if lines and not lines[0].endswith('\n'):
+        lines[0] += '\n'
     corrected_content = '\n'.join(lines)
     return BytesIO(corrected_content.encode('utf-8'))
-
 
 def detectar_delimitador(file_like, default='|'):
     file_like.seek(0)
