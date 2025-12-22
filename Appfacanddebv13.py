@@ -191,7 +191,7 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                 
           
                 # Crear validación de datos para ÁMBITO en F1 con lista fija
-                dv_ambito = DataValidation(type="list", formula1='"INTERNACION,CONSULTORIO EXT,GUARDIA,CIRUGIA AMBULATORIA", allow_blank=True)
+                dv_ambito = DataValidation(type="list", formula1='"INTERNACION,CONSULTORIO EXT,GUARDIA,CIRUGIA AMBULATORIA"', allow_blank=True)
 
                 # Agregar la validación a la hoja
                 ws.add_data_validation(dv_ambito)
