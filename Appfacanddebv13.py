@@ -149,7 +149,7 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                 
                 # Forzar AFILIADO como texto (para que conserve caracteres especiales)
                 if "AFILIADO" in group.columns:
-                    group["AFILIADO"] = group["AFILIADO"].astype(st
+                    group["AFILIADO"] = group["AFILIADO"].astype(str)
 
                 group = group[[col for col in columnas_deseadas if col in group.columns]]
 
