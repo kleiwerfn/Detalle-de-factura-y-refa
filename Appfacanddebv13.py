@@ -145,7 +145,12 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                 ]
                 
                 
-                group = clean_and_format_dataframe(group, force_text_cols=["AFILIADO"])
+                group = clean_and_format_dataframe(group)
+                
+                # Forzar AFILIADO como texto (para que conserve caracteres especiales)
+                if "AFILIADO" in group.columns:
+                    group["AFILIADO"] = group["AFILIADO"].astype(st
+
                 group = group[[col for col in columnas_deseadas if col in group.columns]]
 
                 wb = load_workbook("Plantilla_Débitos_1.xlsm", keep_vba=True)
@@ -181,14 +186,17 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
 
 
                 # Insertar datos desde la fila 3, solo columnas A-G
+               
                 start_row = 3
-                for i, row in group.iterrows():
-                    for j, col in enumerate(columnas_deseadas[:7], start=1):  # A-G
-                        if col in row:
-                            ws.cell(row=start_row, column=j, value=row[col])
+                for _, row in group.iterrows():
+                    for j, col in enumerate(columnas_deseadas, start=1):  # A-H
+                        val = row[col] if col in row else None
+                        # Redundante pero seguro
+                        if col == "AFILIADO" and val is not None:
+                            val = str(val)
+                        ws.cell(row=start_row, column=j, value=val)
                     start_row += 1
-                
-                
+  
           
                 # Crear validación de datos para ÁMBITO en F1 con lista fija
                 dv_ambito = DataValidation(type="list", formula1='"INTERNACION,CONSULTORIO EXT,GUARDIA,CIRUGIA AMBULATORIA"', allow_blank=True)
