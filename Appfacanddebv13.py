@@ -140,7 +140,7 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
 
             if modo_operacion == "Débitos":
                 columnas_deseadas = [
-                    "APELLIDO Y NOMBRE", "COD.NOM", "PRESTACION", "FECHA PRES",
+                    "AFILIADO", "APELLIDO Y NOMBRE", "COD.NOM", "PRESTACION", "FECHA PRES",
                     "CANTID.", "IMPORTE UNIT.", "IMPORTE PREST."
                 ]
                 
