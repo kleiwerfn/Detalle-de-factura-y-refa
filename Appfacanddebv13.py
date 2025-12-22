@@ -187,8 +187,18 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                         if col in row:
                             ws.cell(row=start_row, column=j, value=row[col])
                     start_row += 1
-                    
+                
+                
           
+                # Crear validación de datos para ÁMBITO en F1 con lista fija
+                dv_ambito = DataValidation(type="list", formula1='"INTERNACION,CONSULTORIO EXT,GUARDIA,CIRUGIA AMBULATORIA", allow_blank=True)
+
+                # Agregar la validación a la hoja
+                ws.add_data_validation(dv_ambito)
+
+                # Aplicar la validación solo en F1
+                dv_ambito.add("F1")
+
                 # Crear validación de datos para SECTOR (columna L) con lista fija
                 dv_sector = DataValidation(type="list", formula1='"ADMIN,MEDICO,COMERCIAL"', allow_blank=True)
 
