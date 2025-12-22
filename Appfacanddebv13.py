@@ -188,20 +188,20 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                     start_row += 1
                     
           
-                # Crear validación de datos para SECTOR (columna K) con lista fija
+                # Crear validación de datos para SECTOR (columna L) con lista fija
                 dv_sector = DataValidation(type="list", formula1='"ADMIN,MEDICO,COMERCIAL"', allow_blank=True)
 
                 # Agregar la validación a la hoja
                 ws.add_data_validation(dv_sector)
 
-                # Aplicar la validación a un rango amplio en la columna K (por ejemplo, de la fila 3 a la 200)
-                dv_sector.add("K3:K200")
+                # Aplicar la validación a un rango amplio en la columna L (por ejemplo, de la fila 3 a la 200)
+                dv_sector.add("L3:L200")
 
                 
                 # Actualizar rango de la tabla (recrear tabla con nuevo rango)
                 if tabla:
                     try:
-                        new_ref = f"{ws.cell(row=2, column=1).coordinate}:{ws.cell(row=start_row - 1, column=20).coordinate}"
+                        new_ref = f"{ws.cell(row=2, column=1).coordinate}:{ws.cell(row=start_row - 1, column=21).coordinate}"
                         new_table = Table(displayName=tabla.displayName, ref=new_ref)
                         new_table.tableStyleInfo = tabla.tableStyleInfo
                         del ws.tables[tabla.displayName]
