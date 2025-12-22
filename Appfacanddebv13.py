@@ -42,7 +42,7 @@ column_order = [
 
 # Columnas que deben convertirse a numérico
 numeric_columns = [
-    'H.CLINICA', 'HC UNICA', 'AFILIADO', 'TIP.NOM',
+    'H.CLINICA', 'HC UNICA', 'TIP.NOM',
     'COD.NOM', 'CANTID.', 'IMPORTE UNIT.',
     'COD.OBRA.', 'IMPORTE PREST.',
 ]
@@ -144,13 +144,14 @@ def generate_zip_with_summary(df, folder_base, modo_operacion, logo_bytes):
                     "CANTID.", "IMPORTE UNIT.", "IMPORTE PREST."
                 ]
                 
-                group = clean_and_format_dataframe(group)  # ← Esta línea es nueva
+                
+                group = clean_and_format_dataframe(group, force_text_cols=["AFILIADO"])
                 group = group[[col for col in columnas_deseadas if col in group.columns]]
 
                 wb = load_workbook("Plantilla_Débitos_1.xlsm", keep_vba=True)
                 ws = wb["Debitos"]
-     
-               
+
+                    
                 # Buscar la tabla que contenga 'debitos' en su nombre
                 tabla = None
                 for t_name in ws.tables:
